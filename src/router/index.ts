@@ -24,6 +24,13 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/ProductView.vue'),
     meta: { requiresAuth: true },
   },
+  {
+  path: '/register',
+  name: 'Register',
+  component: () => import('@/views/RegisterView.vue'),
+  meta: { requiresAuth: false },
+},
+
 ]
 
 const router = createRouter({
@@ -37,10 +44,11 @@ router.beforeEach((to, from, next) => {
   const requiresAuth = to.meta.requiresAuth !== false
 
   if (requiresAuth && !authStore.isAuthenticated) {
-    // Redirect to login if route requires auth and user is not authenticated
     next({ name: 'Login' })
-  } else if (to.name === 'Login' && authStore.isAuthenticated) {
-    // Redirect to dashboard if user is already authenticated
+  } else if (
+    (to.name === 'Login' || to.name === 'Register') &&
+    authStore.isAuthenticated
+  ) {
     next({ name: 'Dashboard' })
   } else {
     next()

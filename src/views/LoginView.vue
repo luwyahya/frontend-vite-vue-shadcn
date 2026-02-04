@@ -30,16 +30,27 @@
               required
             />
           </div>
-          <Button type="submit" class="w-full" :disabled="loading">
+            <Button
+            type="submit"
+            class="w-full mb-2"
+            :disabled="loading"
+          >
             {{ loading ? 'Logging in...' : 'Login' }}
-          </Button>
+            </Button>
+                  <CardDescription class="text-center text-sm">
+               Don't have an account?
+                  <RouterLink
+                    to="/register"
+                    class="ml-1 font-medium text-muted-foreground hover:text-blue-600 transition-colors"
+                  >
+                    Sign Up
+                  </RouterLink>
+              </CardDescription>
+
+
         </form>
       </CardContent>
-      <CardFooter class="flex flex-col space-y-2">
-        <p class="text-xs text-muted-foreground text-center">
-          This is a demo login. Use any email and password.
-        </p>
-      </CardFooter>
+      
     </Card>
   </div>
 </template>

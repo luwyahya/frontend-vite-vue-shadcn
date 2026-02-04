@@ -1,11 +1,21 @@
 import { defineStore } from 'pinia'
 import type { AuthState, User, LoginCredentials } from '@/types/auth.types'
+import { api } from '@/services/api.service'
+
+interface RegisterPayload {
+  name: string
+  email: string
+  password: string
+  password_confirmation: string
+}
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     isLoggedIn: !!localStorage.getItem('token'),
     token: localStorage.getItem('token'),
-    user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null,
+    user: localStorage.getItem('user')
+      ? JSON.parse(localStorage.getItem('user')!)
+      : null,
   }),
 
   getters: {
@@ -14,7 +24,24 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async login(credentials: LoginCredentials) {
+      const { data } = await api.post('/login', credentials)
+
+      const token = data.data?.token || data.token
+      const user = data.data?.user || data.user
+
+      this.token = token
+      this.user = user
+      this.isLoggedIn = true
+
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+
+      return true
+    },
+
+    async register(payload: RegisterPayload) {
       try {
+<<<<<<< HEAD
         const response = await fetch('http://127.0.0.1:8000/api/login', {
           method: 'POST',
           headers: {
@@ -42,17 +69,29 @@ export const useAuthStore = defineStore('auth', {
         return { success: true }
       } catch (error) {
         console.error('Login failed:', error)
+=======
+        await api.post('/register', payload)
+        return true
+      } catch (error: any) {
+        if (error.response?.status === 422) {
+          // Validation errors dari Laravel
+          const validationErrors = error.response.data.errors || {}
+          console.error('Validation errors:', validationErrors)
+          throw {
+            message: 'Validation failed',
+            errors: validationErrors
+          }
+        }
+>>>>>>> 1bc0a473434b7cc1c74f8beac1747ae3953dc831
         throw error
       }
     },
 
     logout() {
-      // Clear state
       this.token = null
       this.user = null
       this.isLoggedIn = false
 
-      // Clear localStorage
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     },
@@ -60,7 +99,7 @@ export const useAuthStore = defineStore('auth', {
     checkAuth() {
       const token = localStorage.getItem('token')
       const user = localStorage.getItem('user')
-      
+
       if (token && user) {
         this.token = token
         this.user = JSON.parse(user)
