@@ -2,6 +2,7 @@
   <SidebarProvider>
     <AppSidebar />
     <SidebarInset>
+      <Toast :message="toastMessage" :type="toastType" :visible="showToast" />
       <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-4xl mx-auto px-4">
       <!-- Header -->
@@ -239,6 +240,7 @@ import { useAuthStore } from '@/stores/auth.store'
 import { api } from '@/services/api.service'
 import AppSidebar from '@/components/AppSidebar.vue'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { Toast } from '@/components/ui/toast'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -256,6 +258,11 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const avatarPreview = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
 
+// Toast state
+const showToast = ref(false)
+const toastMessage = ref('')
+const toastType = ref<'success' | 'error'>('success')
+
 const profileForm = reactive({
   name: user?.name || '',
   email: user?.email || '',
@@ -269,6 +276,15 @@ const passwordForm = reactive({
   new: '',
   confirm: ''
 })
+
+const showToastMessage = (message: string, type: 'success' | 'error') => {
+  toastMessage.value = message
+  toastType.value = type
+  showToast.value = true
+  setTimeout(() => {
+    showToast.value = false
+  }, 3000)
+}
 
 const triggerFileInput = () => {
   fileInput.value?.click()
@@ -302,9 +318,6 @@ const cancelEditing = () => {
   // Reset form
   profileForm.name = user?.name || ''
   profileForm.email = user?.email || ''
-  profileForm.phone = user?.phone || ''
-  profileForm.address = user?.address || ''
-  profileForm.dateOfBirth = user?.date_of_birth || ''
 }
 
 const saveProfile = async () => {
@@ -340,10 +353,11 @@ const saveProfile = async () => {
     avatarPreview.value = null
     selectedFile.value = null
     
+    showToastMessage('Profile updated successfully! ', 'success')
     console.log('Profile updated successfully')
   } catch (error: any) {
     console.error('Failed to update profile:', error)
-    alert(error.message || 'Gagal mengupdate profile')
+    showToastMessage(error.message || 'Failed to update profile', 'error')
   } finally {
     loading.value = false
   }
@@ -358,7 +372,7 @@ const changePassword = async () => {
   loading.value = true
   try {
     // Call Laravel API to change password
-    await api.post('/profile/change-password', {
+    await api.post('/profile/update', {
       current_password: passwordForm.current,
       new_password: passwordForm.new,
       new_password_confirmation: passwordForm.confirm
@@ -369,11 +383,11 @@ const changePassword = async () => {
     passwordForm.new = ''
     passwordForm.confirm = ''
     
+    showToastMessage('Password changed successfully!', 'success')
     console.log('Password changed successfully')
-    alert('Password berhasil diubah')
   } catch (error: any) {
     console.error('Failed to change password:', error)
-    alert(error.message || 'Gagal mengubah password')
+    showToastMessage(error.message || 'Failed to change password', 'error')
   } finally {
     loading.value = false
   }
