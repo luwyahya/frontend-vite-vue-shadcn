@@ -9,14 +9,27 @@ const USE_MOCK = import.meta.env.DEV
 class ProductService {
   private readonly endpoint = '/products'
 
-  async getProducts(page: number = 1, perPage: number = 10): Promise<LaravelApiResponse<Product[]>> {
+  async getProducts(
+    page: number = 1, 
+    params: any = {}
+  ): Promise<LaravelApiResponse<Product[]>> {
     if (USE_MOCK) {
-      return mockProductService.getProducts(page, perPage)
+      return mockProductService.getProducts(page, params.per_page || 10)
     }
-    return httpService.get<LaravelApiResponse<Product[]>>(this.endpoint, {
+    
+    const queryParams = {
       page,
-      per_page: perPage,
+      ...params
+    }
+    
+    // Remove null/empty values
+    Object.keys(queryParams).forEach(key => {
+      if (queryParams[key] === null || queryParams[key] === '') {
+        delete queryParams[key]
+      }
     })
+    
+    return httpService.get<LaravelApiResponse<Product[]>>(this.endpoint, queryParams)
   }
 
   async getProduct(id: number): Promise<LaravelApiResponse<Product>> {

@@ -6,6 +6,14 @@ export const useProductStore = defineStore('product', {
   state: (): ProductState => ({
     items: [],
     loading: false,
+    searchQuery: '',
+    filters: {
+      max_price: '',
+      min_price: '',
+      sort_by: 'created_at',
+      sort_order: 'desc',
+      stock_status: '',
+    },
     pagination: {
       current_page: 1,
       last_page: 1,
@@ -15,10 +23,14 @@ export const useProductStore = defineStore('product', {
   }),
 
   actions: {
-    async fetchProducts(page: number = 1, perPage: number = 10) {
+    async fetchProducts(page: number = 1, perPage: number = 10, _unused?: string, filters?: any) {
       this.loading = true
       try {
-        const response = await productService.getProducts(page, perPage)
+        const params = {
+          per_page: perPage,
+          ...filters
+        }
+        const response = await productService.getProducts(page, params)
         
         // Handle Laravel API Resource format
         this.items = response.data
@@ -37,6 +49,36 @@ export const useProductStore = defineStore('product', {
       } finally {
         this.loading = false
       }
+    },
+
+    async searchProducts(query: string) {
+      this.searchQuery = query
+      const params = {
+        q: query,
+        ...this.filters
+      }
+      await this.fetchProducts(1, this.pagination.per_page, undefined, params)
+    },
+
+    async filterProducts(filters: any) {
+      this.filters = { ...this.filters, ...filters }
+      const params = {
+        q: this.searchQuery,
+        ...this.filters
+      }
+      await this.fetchProducts(1, this.pagination.per_page, undefined, params)
+    },
+
+    async clearFilters() {
+      this.searchQuery = ''
+      this.filters = {
+        max_price: '',
+        min_price: '',
+        sort_by: 'created_at',
+        sort_order: 'desc',
+        stock_status: '',
+      }
+      await this.fetchProducts(1, this.pagination.per_page)
     },
 
     async createProduct(data: ProductFormData) {
@@ -88,13 +130,23 @@ export const useProductStore = defineStore('product', {
 
     nextPage() {
       if (this.pagination.current_page < this.pagination.last_page) {
-        this.fetchProducts(this.pagination.current_page + 1, this.pagination.per_page)
+        const params = {
+          q: this.searchQuery,
+          per_page: this.pagination.per_page,
+          ...this.filters
+        }
+        this.fetchProducts(this.pagination.current_page + 1, undefined, undefined, params)
       }
     },
 
     prevPage() {
       if (this.pagination.current_page > 1) {
-        this.fetchProducts(this.pagination.current_page - 1, this.pagination.per_page)
+        const params = {
+          q: this.searchQuery,
+          per_page: this.pagination.per_page,
+          ...this.filters
+        }
+        this.fetchProducts(this.pagination.current_page - 1, undefined, undefined, params)
       }
     },
   },

@@ -72,23 +72,26 @@ const loading = ref(false)
 const handleLogin = async () => {
   loading.value = true
   try {
-    await authStore.login({ email: email.value, password: password.value })
+    const success = await authStore.login({ email: email.value, password: password.value })
     
-    toast({
-      title: 'Login berhasil',
-      description: 'Selamat datang kembali!',
-      class: 'border-green-200 bg-green-50 text-green-800',
-    })
-    
-    setTimeout(() => {
-      router.push('/dashboard')
-    }, 1000)
-  } catch (error) {
+    if (success) {
+      toast({
+        title: 'Login berhasil',
+        description: 'Selamat datang kembali!',
+        class: 'border-green-200 bg-green-50 text-green-800',
+      })
+      
+      // Force redirect ke dashboard
+      await router.push('/dashboard')
+      // Reload untuk memastikan state terupdate
+      window.location.reload()
+    }
+  } catch (error: any) {
     console.error('Login failed:', error)
     
     toast({
       title: 'Login gagal',
-      description: 'Periksa email dan password Anda.',
+      description: error?.message || 'Periksa email dan password Anda.',
       variant: 'destructive',
     })
   } finally {

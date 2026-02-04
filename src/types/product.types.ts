@@ -18,6 +18,14 @@ export interface ProductFormData {
 export interface ProductState {
   items: Product[]
   loading: boolean
+  searchQuery: string
+  filters: {
+    max_price: string
+    min_price: string
+    sort_by: 'name' | 'price' | 'stock' | 'created_at'
+    sort_order: 'asc' | 'desc'
+    stock_status: '' | 'in_stock' | 'out_of_stock' | 'low_stock'
+  }
   pagination: {
     current_page: number
     last_page: number

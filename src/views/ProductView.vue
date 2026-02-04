@@ -83,6 +83,51 @@
             </Dialog>
           </div>
 
+          <!-- Search and Filter Section -->
+          <Card>
+            <CardContent class="p-4">
+              <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <!-- Search -->
+                <div class="flex-1 max-w-sm">
+                  <Input
+                    v-model="searchQuery"
+                    placeholder="Search products..."
+                    @input="handleSearch"
+                    class="w-full"
+                  />
+                </div>
+                
+                <!-- Filters -->
+                <div class="flex gap-2 flex-wrap">
+                  <Input
+                    v-model="filters.min_price"
+                    placeholder="Min Price"
+                    type="number"
+                    step="0.01"
+                    class="w-32"
+                    @input="handleFilter"
+                  />
+                  <Input
+                    v-model="filters.max_price"
+                    placeholder="Max Price"
+                    type="number"
+                    step="0.01"
+                    class="w-32"
+                    @input="handleFilter"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    @click="clearFilters"
+                    v-if="hasActiveFilters"
+                  >
+                    Clear Filters
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <!-- Analytics Cards -->
           <SectionCards />
 
@@ -174,7 +219,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useProductStore } from '@/stores/product.store'
 import type { Product, ProductFormData } from '@/types/product.types'
 import { Button } from '@/components/ui/button'
@@ -192,12 +237,47 @@ const productStore = useProductStore()
 
 const dialogOpen = ref(false)
 const editingProduct = ref<Product | null>(null)
+const searchQuery = ref('')
+const filters = reactive({
+  min_price: '' as string,
+  max_price: '' as string,
+})
+
 const formData = reactive<ProductFormData>({
   name: '',
   description: '',
   price: 0,
   stock: 0,
 })
+
+const hasActiveFilters = computed(() => {
+  return searchQuery.value !== '' || 
+         filters.min_price !== '' || 
+         filters.max_price !== ''
+})
+
+let searchTimeout: NodeJS.Timeout
+
+const handleSearch = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    productStore.searchProducts(searchQuery.value)
+  }, 500)
+}
+
+const handleFilter = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    productStore.filterProducts(filters)
+  }, 500)
+}
+
+const clearFilters = () => {
+  searchQuery.value = ''
+  filters.min_price = ''
+  filters.max_price = ''
+  productStore.clearFilters()
+}
 
 const resetForm = () => {
   formData.name = ''
@@ -251,4 +331,3 @@ onMounted(() => {
   productStore.fetchProducts()
 })
 </script>
-
