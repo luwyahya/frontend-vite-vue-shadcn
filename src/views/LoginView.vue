@@ -45,11 +45,8 @@
                     Sign Up
                   </RouterLink>
               </CardDescription>
-
-
         </form>
       </CardContent>
-      
     </Card>
   </div>
 </template>
@@ -58,11 +55,13 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { useToast } from '@/components/ui/toast/use-toast'
 
+const { toast } = useToast()
 const router = useRouter()
 const authStore = useAuthStore()
 
@@ -74,9 +73,24 @@ const handleLogin = async () => {
   loading.value = true
   try {
     await authStore.login({ email: email.value, password: password.value })
-    router.push('/dashboard')
+    
+    toast({
+      title: 'Login berhasil',
+      description: 'Selamat datang kembali!',
+      class: 'border-green-200 bg-green-50 text-green-800',
+    })
+    
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 1000)
   } catch (error) {
     console.error('Login failed:', error)
+    
+    toast({
+      title: 'Login gagal',
+      description: 'Periksa email dan password Anda.',
+      variant: 'destructive',
+    })
   } finally {
     loading.value = false
   }
