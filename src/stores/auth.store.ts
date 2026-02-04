@@ -1,11 +1,21 @@
 import { defineStore } from 'pinia'
 import type { AuthState, User, LoginCredentials } from '@/types/auth.types'
+import { api } from '@/services/api.service'
+
+interface RegisterPayload {
+  name: string
+  email: string
+  password: string
+  password_confirmation: string
+}
 
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     isLoggedIn: !!localStorage.getItem('token'),
     token: localStorage.getItem('token'),
-    user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null,
+    user: localStorage.getItem('user')
+      ? JSON.parse(localStorage.getItem('user')!)
+      : null,
   }),
 
   getters: {
@@ -13,41 +23,45 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    // Mock login - replace with actual API call when backend is ready
     async login(credentials: LoginCredentials) {
+      const { data } = await api.post('/login', credentials)
+
+      const token = data.data?.token || data.token
+      const user = data.data?.user || data.user
+
+      this.token = token
+      this.user = user
+      this.isLoggedIn = true
+
+      localStorage.setItem('token', token)
+      localStorage.setItem('user', JSON.stringify(user))
+
+      return true
+    },
+
+    async register(payload: RegisterPayload) {
       try {
-        // Mock response - replace with actual API call
-        const mockUser: User = {
-          id: 1,
-          name: 'John Doe',
-          email: credentials.email,
+        await api.post('/register', payload)
+        return true
+      } catch (error: any) {
+        if (error.response?.status === 422) {
+          // Validation errors dari Laravel
+          const validationErrors = error.response.data.errors || {}
+          console.error('Validation errors:', validationErrors)
+          throw {
+            message: 'Validation failed',
+            errors: validationErrors
+          }
         }
-        
-        const mockToken = 'mock-jwt-token-' + Date.now()
-
-        // Save to state
-        this.token = mockToken
-        this.user = mockUser
-        this.isLoggedIn = true
-
-        // Save to localStorage
-        localStorage.setItem('token', mockToken)
-        localStorage.setItem('user', JSON.stringify(mockUser))
-
-        return { success: true }
-      } catch (error) {
-        console.error('Login failed:', error)
-        return { success: false, error }
+        throw error
       }
     },
 
     logout() {
-      // Clear state
       this.token = null
       this.user = null
       this.isLoggedIn = false
 
-      // Clear localStorage
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     },
@@ -55,7 +69,7 @@ export const useAuthStore = defineStore('auth', {
     checkAuth() {
       const token = localStorage.getItem('token')
       const user = localStorage.getItem('user')
-      
+
       if (token && user) {
         this.token = token
         this.user = JSON.parse(user)
