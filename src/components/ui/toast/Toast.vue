@@ -26,11 +26,18 @@
 </template>
 
 <script setup lang="ts">
+import { watch } from 'vue'
+
 interface Props {
   message: string
   type: 'success' | 'error'
   visible: boolean
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+
+// Debug: watch props changes
+watch(() => props, (newProps) => {
+  console.log('Toast props changed:', newProps)
+}, { deep: true, immediate: true })
 </script>

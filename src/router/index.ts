@@ -25,12 +25,17 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
   },
   {
-  path: '/register',
-  name: 'Register',
-  component: () => import('@/views/RegisterView.vue'),
-  meta: { requiresAuth: false },
-},
-
+    path: '/profile',
+    name: 'Profile',
+    component: () => import('@/views/ProfileView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/RegisterView.vue'),
+    meta: { requiresAuth: false },
+  },
 ]
 
 const router = createRouter({

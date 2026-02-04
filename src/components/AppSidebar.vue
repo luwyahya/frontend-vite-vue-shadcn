@@ -74,7 +74,7 @@ const navigationItems = [
     <SidebarFooter>
       <SidebarMenu>
         <SidebarMenuItem>
-          <SidebarMenuButton size="lg">
+          <SidebarMenuButton size="lg" @click="router.push('/profile')">
             <div class="flex items-center gap-2">
               <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                 <span class="text-sm font-semibold">U</span>

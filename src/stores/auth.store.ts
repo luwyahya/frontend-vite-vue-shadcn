@@ -23,53 +23,48 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    async login(credentials: LoginCredentials) {
-      const { data } = await api.post('/login', credentials)
-
-      const token = data.data?.token || data.token
-      const user = data.data?.user || data.user
-
-      this.token = token
+  async login(credentials: LoginCredentials) {
+    try {
+      const response = await api.post('/login', credentials)
+      
+      const { access_token, user } = response.data.data
+      
+      this.token = access_token
       this.user = user
       this.isLoggedIn = true
-
-      localStorage.setItem('token', token)
+      
+      localStorage.setItem('token', access_token)
       localStorage.setItem('user', JSON.stringify(user))
-
+      
       return true
-    },
+    } catch (error: any) {
+      console.error('API Error:', error)
+      
+      // Handle different error scenarios
+      if (error.response) {
+        // Server responded with error status
+        const status = error.response.status
+        const message = error.response.data?.message
+        
+        if (status === 401) {
+          throw new Error('Email atau password salah')
+        } else if (status === 422) {
+          throw new Error('Data tidak valid')
+        } else {
+          throw new Error(message || 'Login gagal')
+        }
+      } else if (error.request) {
+        // Network error - API tidak bisa diakses
+        throw new Error('Tidak dapat terhubung ke server')
+      } else {
+        // Other error
+        throw new Error('Terjadi kesalahan')
+      }
+    }
+  },
 
     async register(payload: RegisterPayload) {
       try {
-<<<<<<< HEAD
-        const response = await fetch('http://127.0.0.1:8000/api/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify(credentials),
-        })
-
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.message || 'Login failed')
-        }
-
-        // Save to state
-        this.token = data.data.access_token
-        this.user = data.data.user
-        this.isLoggedIn = true
-
-        // Save to localStorage
-        localStorage.setItem('token', data.data.access_token)
-        localStorage.setItem('user', JSON.stringify(data.data.user))
-
-        return { success: true }
-      } catch (error) {
-        console.error('Login failed:', error)
-=======
         await api.post('/register', payload)
         return true
       } catch (error: any) {
@@ -82,7 +77,6 @@ export const useAuthStore = defineStore('auth', {
             errors: validationErrors
           }
         }
->>>>>>> 1bc0a473434b7cc1c74f8beac1747ae3953dc831
         throw error
       }
     },
