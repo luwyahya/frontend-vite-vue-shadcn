@@ -13,31 +13,36 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    // Mock login - replace with actual API call when backend is ready
     async login(credentials: LoginCredentials) {
       try {
-        // Mock response - replace with actual API call
-        const mockUser: User = {
-          id: 1,
-          name: 'John Doe',
-          email: credentials.email,
+        const response = await fetch('http://127.0.0.1:8000/api/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+          body: JSON.stringify(credentials),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.message || 'Login failed')
         }
-        
-        const mockToken = 'mock-jwt-token-' + Date.now()
 
         // Save to state
-        this.token = mockToken
-        this.user = mockUser
+        this.token = data.data.access_token
+        this.user = data.data.user
         this.isLoggedIn = true
 
         // Save to localStorage
-        localStorage.setItem('token', mockToken)
-        localStorage.setItem('user', JSON.stringify(mockUser))
+        localStorage.setItem('token', data.data.access_token)
+        localStorage.setItem('user', JSON.stringify(data.data.user))
 
         return { success: true }
       } catch (error) {
         console.error('Login failed:', error)
-        return { success: false, error }
+        throw error
       }
     },
 
