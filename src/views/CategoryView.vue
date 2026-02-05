@@ -62,9 +62,8 @@
             </CardContent>
           </Card>
 
-          <!-- Categories Grid -->
-          <div v-if="loading && categories.length === 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            <!-- Loading Skeleton Cards -->
+          <!-- Loading State -->
+          <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <div v-for="n in 8" :key="n" class="animate-pulse">
               <Card class="hover:shadow-lg transition-shadow">
                 <CardContent class="p-6 text-center">
@@ -79,6 +78,8 @@
               </Card>
             </div>
           </div>
+
+          <!-- Categories Grid -->
 
           <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             <Card
@@ -106,7 +107,7 @@
           </div>
 
           <!-- Empty State -->
-          <div v-if="filteredCategories.length === 0" class="text-center py-12">
+          <div v-if="!isLoading && filteredCategories.length === 0" class="text-center py-12">
             <Package class="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 class="text-lg font-medium text-gray-900 mb-2">No categories found</h3>
             <p class="text-gray-600 mb-4">
@@ -158,12 +159,12 @@
             {{ loading ? 'Saving...' : (editingCategory ? 'Update' : 'Create') }}
           </span>
         </Button>
-        <Button v-if="editingCategory" @click="deleteCategory(editingCategory)" variant="destructive" :disabled="deleting" class="relative">
-          <div v-if="deleting" class="absolute inset-0 flex items-center justify-center">
+        <Button v-if="editingCategory" @click="deleteCategory(editingCategory)" variant="destructive" :disabled="loading" class="relative">
+          <div v-if="loading" class="absolute inset-0 flex items-center justify-center">
             <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
           </div>
-          <span :class="{ 'opacity-0': deleting }">
-            {{ deleting ? 'Deleting...' : 'Delete' }}
+          <span :class="{ 'opacity-0': loading }">
+            {{ loading ? 'Deleting...' : 'Delete' }}
           </span>
         </Button>
       </div>
@@ -190,6 +191,7 @@ const router = useRouter()
 
 // State
 const categories = ref([])
+const isLoading = ref(false)
 const loading = ref(false)
 const deleting = ref(false)
 const searchQuery = ref('')
@@ -269,12 +271,15 @@ const getCategoryColor = (categoryName: string) => {
 }
 
 const fetchCategories = async () => {
+  isLoading.value = true
   try {
     const response = await api.get('/categories')
     categories.value = response.data.data || response.data
   } catch (error) {
     console.error('Failed to fetch categories:', error)
     showToastMessage('Failed to load categories', 'error')
+  } finally {
+    isLoading.value = false
   }
 }
 
@@ -291,18 +296,17 @@ const deleteCategory = async (category: any) => {
     return
   }
 
-  deleting.value = true
+  loading.value = true
   try {
     await api.delete(`/categories/${category.slug}`)
     showToastMessage('Category deleted successfully!', 'success')
     await fetchCategories()
-    closeDialog()
   } catch (error: any) {
     console.error('Failed to delete category:', error)
     const errorMessage = error.response?.data?.message || error.message || 'Failed to delete category'
     showToastMessage(errorMessage, 'error')
   } finally {
-    deleting.value = false
+    loading.value = false
   }
 }
 

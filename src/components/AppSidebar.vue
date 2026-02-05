@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { Home, Package, FolderOpen } from 'lucide-vue-next'
+import { Home, Package, FolderOpen, Users } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -39,6 +39,11 @@ const navigationItems = [
     title: 'Categories',
     icon: FolderOpen,
     path: '/categories',
+  },
+  {
+    title: 'Users',
+    icon: Users,
+    path: '/users',
   },
 ]
 </script>
