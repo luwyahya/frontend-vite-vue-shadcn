@@ -87,7 +87,7 @@
                       </SelectTrigger>
                       <SelectContent class="h-[200px] overflow-y-auto">
                         <SelectItem :value="null">No Category</SelectItem>
-                        <SelectItem v-for="category in categories" :key="category.id" :value="category.id">
+                        <SelectItem v-for="category in categories.filter(c => c.is_active !== false)" :key="category.id" :value="category.id">
                           {{ category.name }}
                         </SelectItem>
                       </SelectContent>
@@ -468,12 +468,29 @@ const openEditDialog = (product: Product) => {
   formData.price = product.price
   formData.stock = product.stock
   formData.sku = product.sku
-  formData.category_id = product.category_id || null
+  
+  // Check if product's category still exists
+  if (product.category_id) {
+    const categoryExists = categories.value.some(c => c.id === product.category_id)
+    formData.category_id = categoryExists ? product.category_id : null
+  } else {
+    formData.category_id = null
+  }
+  
   dialogOpen.value = true
 }
 
 const handleSubmit = async () => {
   try {
+    // Validate category_id exists if selected
+    if (formData.category_id) {
+      const categoryExists = categories.value.some(c => c.id === formData.category_id)
+      if (!categoryExists) {
+        alert('Selected category is no longer available. Please choose another category.')
+        return
+      }
+    }
+    
     if (editingProduct.value) {
       await productStore.updateProduct(editingProduct.value.id, formData)
     } else {

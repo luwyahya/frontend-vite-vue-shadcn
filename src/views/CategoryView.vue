@@ -86,11 +86,21 @@
             <Card
               v-for="(category, index) in filteredCategories"
               :key="category.id"
-              class="hover:shadow-lg transition-all duration-300 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-4"
+              class="group hover:shadow-lg transition-all duration-300 cursor-pointer animate-in fade-in-0 slide-in-from-bottom-4"
               :style="{ animationDelay: `${index * 50}ms` }"
               @click="selectCategory(category)"
             >
-              <CardContent class="p-6 text-center">
+              <CardContent class="p-6 text-center relative">
+                <!-- Edit button -->
+                <Button
+                  @click.stop="editCategory(category)"
+                  variant="ghost"
+                  size="sm"
+                  class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Edit class="w-4 h-4" />
+                </Button>
+                
                 <div class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
                      :class="getCategoryColor(category.name)">
                   <component :is="getCategoryIcon(category.name)" class="w-8 h-8 text-white" />
@@ -123,6 +133,45 @@
       </div>
     </SidebarInset>
   </SidebarProvider>
+
+  <!-- Products in Category Dialog -->
+  <Dialog v-model:open="showProductsDialog">
+    <DialogContent class="max-w-4xl">
+      <DialogTitle>Products in {{ selectedCategoryName }}</DialogTitle>
+      <DialogDescription>
+        View all products in this category
+      </DialogDescription>
+      
+      <div class="mt-4 max-h-96 overflow-y-auto">
+        <div v-if="selectedCategoryProducts.length === 0" class="text-center py-8">
+          <Package class="w-12 h-12 text-gray-400 mx-auto mb-3" />
+          <p class="text-gray-600">No products in this category</p>
+        </div>
+        
+        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card v-for="product in selectedCategoryProducts" :key="product.id" class="hover:shadow-md transition-shadow">
+            <CardContent class="p-4">
+              <div class="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center">
+                <Package class="w-8 h-8 text-gray-400" />
+              </div>
+              <h4 class="font-medium text-sm mb-1">{{ product.name }}</h4>
+              <p class="text-xs text-gray-600 mb-2">{{ product.description || 'No description' }}</p>
+              <div class="flex justify-between items-center">
+                <span class="font-semibold text-green-600">${{ product.price }}</span>
+                <Badge variant="default">
+                  In Stock
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
+      <div class="flex justify-end mt-4">
+        <Button variant="outline" @click="closeDialog">Close</Button>
+      </div>
+    </DialogContent>
+  </Dialog>
 
   <!-- Add/Edit Category Dialog -->
   <Dialog v-model:open="showAddDialog">
@@ -187,19 +236,37 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
-import { Search, Plus, Package, ShoppingBag, Shirt, Laptop, Home, Car, Book, Gamepad2, Music, Camera } from 'lucide-vue-next'
+import { Search, Plus, Package, ShoppingBag, Shirt, Laptop, Home, Car, Book, Gamepad2, Music, Camera, Edit } from 'lucide-vue-next'
 
 const router = useRouter()
 
 // State
-const categories = ref([])
+interface Category {
+  id: number
+  name: string
+  description?: string
+  is_active: boolean
+  products_count?: number
+}
+
+interface Product {
+  id: number
+  name: string
+  description?: string
+  price: number
+}
+
+const categories = ref<Category[]>([])
 const isLoading = ref(false)
 const loading = ref(false)
 const deleting = ref(false)
 const searchQuery = ref('')
 const selectedFilter = ref('all')
 const showAddDialog = ref(false)
-const editingCategory = ref(null)
+const showProductsDialog = ref(false)
+const selectedCategoryProducts = ref<Product[]>([])
+const selectedCategoryName = ref('')
+const editingCategory = ref<Category | null>(null)
 
 // Toast
 const showToast = ref(false)
@@ -285,7 +352,14 @@ const fetchCategories = async () => {
   }
 }
 
-const selectCategory = (category: any) => {
+const selectCategory = (category: Category) => {
+  // Show products dialog instead of edit dialog
+  showProductsDialog.value = true
+  selectedCategoryName.value = category.name
+  fetchCategoryProducts(category.id)
+}
+
+const editCategory = (category: Category) => {
   editingCategory.value = category
   categoryForm.name = category.name
   categoryForm.description = category.description || ''
@@ -293,16 +367,27 @@ const selectCategory = (category: any) => {
   showAddDialog.value = true
 }
 
-const deleteCategory = async (category: any) => {
+const fetchCategoryProducts = async (categoryId: number) => {
+  try {
+    const response = await api.get(`/categories/${categoryId}`)
+    selectedCategoryProducts.value = response.data.data.products || []
+  } catch (error) {
+    console.error('Failed to fetch category products:', error)
+    showToastMessage('Failed to load products', 'error')
+  }
+}
+
+const deleteCategory = async (category: Category) => {
   if (!confirm(`Are you sure you want to delete "${category.name}"?`)) {
     return
   }
 
   loading.value = true
   try {
-    await api.delete(`/categories/${category.slug}`)
+    await api.delete(`/categories/${category.id}`)
     showToastMessage('Category deleted successfully!', 'success')
     await fetchCategories()
+    closeDialog()
   } catch (error: any) {
     console.error('Failed to delete category:', error)
     const errorMessage = error.response?.data?.message || error.message || 'Failed to delete category'
@@ -314,7 +399,10 @@ const deleteCategory = async (category: any) => {
 
 const closeDialog = () => {
   showAddDialog.value = false
+  showProductsDialog.value = false
   editingCategory.value = null
+  selectedCategoryProducts.value = []
+  selectedCategoryName.value = ''
   categoryForm.name = ''
   categoryForm.description = ''
   categoryForm.is_active = true
@@ -329,12 +417,12 @@ const saveCategory = async () => {
   loading.value = true
   try {
     if (editingCategory.value) {
-      // Update existing category using slug
-      const response = await api.put(`/categories/${editingCategory.value.slug}`, categoryForm)
+      // Update existing category using ID
+      await api.put(`/categories/${editingCategory.value.id}`, categoryForm)
       showToastMessage('Category updated successfully!', 'success')
     } else {
       // Create new category
-      const response = await api.post('/categories', categoryForm)
+      await api.post('/categories', categoryForm)
       showToastMessage('Category created successfully!', 'success')
     }
     
