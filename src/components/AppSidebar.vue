@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth.store'
+import { getAvatarUrl } from '@/utils/avatar.utils'
+import { computed } from 'vue'
 import {
   Sidebar,
   SidebarContent,
@@ -12,10 +15,14 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar'
-import { Home, Package } from 'lucide-vue-next'
+import { Home, Package, FolderOpen } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
+const authStore = useAuthStore()
+const user = authStore.user
+
+const avatarUrl = computed(() => getAvatarUrl(user?.avatar))
 
 const navigationItems = [
   {
@@ -27,6 +34,11 @@ const navigationItems = [
     title: 'Products',
     icon: Package,
     path: '/products',
+  },
+  {
+    title: 'Categories',
+    icon: FolderOpen,
+    path: '/categories',
   },
 ]
 </script>
@@ -76,12 +88,23 @@ const navigationItems = [
         <SidebarMenuItem>
           <SidebarMenuButton size="lg" @click="router.push('/profile')">
             <div class="flex items-center gap-2">
-              <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
-                <span class="text-sm font-semibold">U</span>
+              <div class="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
+                <img 
+                  v-if="avatarUrl"
+                  :src="avatarUrl"
+                  :alt="user?.name"
+                  class="w-full h-full object-cover"
+                />
+                <div 
+                  v-else
+                  class="w-full h-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold"
+                >
+                  {{ user?.name?.charAt(0).toUpperCase() || 'U' }}
+                </div>
               </div>
               <div class="flex flex-col gap-0.5 leading-none">
-                <span class="text-sm font-medium">User</span>
-                <span class="text-xs text-muted-foreground">user@example.com</span>
+                <span class="text-sm font-medium">{{ user?.name || 'User' }}</span>
+                <span class="text-xs text-muted-foreground">{{ user?.email || 'user@example.com' }}</span>
               </div>
             </div>
           </SidebarMenuButton>

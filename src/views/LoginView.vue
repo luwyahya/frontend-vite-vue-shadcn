@@ -7,7 +7,7 @@
   />
 
   <div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-    <Card class="w-full max-w-md">
+    <Card class="w-full max-w-md transform transition-all duration-300 hover:scale-105 animate-in fade-in-0 slide-in-from-bottom-4">
       <CardHeader class="space-y-1">
         <CardTitle class="text-2xl font-bold text-center">
           Welcome Back
@@ -43,10 +43,15 @@
 
           <Button
             type="submit"
-            class="w-full"
+            class="w-full relative"
             :disabled="loading"
           >
-            {{ loading ? 'Logging in...' : 'Login' }}
+            <div v-if="loading" class="absolute inset-0 flex items-center justify-center">
+              <div class="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+            </div>
+            <span :class="{ 'opacity-0': loading }">
+              {{ loading ? 'Logging in...' : 'Login' }}
+            </span>
           </Button>
 
           <CardDescription class="text-center text-sm">
