@@ -100,7 +100,7 @@ const navigationItems = [
             <div class="flex items-center gap-2">
               <div class="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
                 <img 
-                  v-if="user?.avatar && !imageError"
+                  v-if="avatarUrl && !imageError"
                   :src="avatarUrl"
                   :alt="user?.name"
                   class="w-full h-full object-cover"

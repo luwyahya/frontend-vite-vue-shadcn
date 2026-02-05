@@ -23,8 +23,8 @@
                   <div class="relative">
                     <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg">
                       <img 
-                        v-if="(avatarUrl || avatarPreview) && !imageError"
-                        :src="avatarPreview || avatarUrl || undefined"
+                        v-if="avatarPreview || (avatarUrl && !imageError)"
+                        :src="avatarPreview || avatarUrl"
                         alt="Avatar"
                         class="w-full h-full object-cover"
                         @error="handleImageError"
@@ -332,8 +332,26 @@ const saveProfile = async () => {
 
     showToastMessage('Profile updated successfully!', 'success')
   } catch (error: any) {
-    console.error(error)
-    showToastMessage(error.message || 'Failed to update profile', 'error')
+    console.error('Profile update error:', error)
+    console.log('Full error object:', JSON.stringify(error, null, 2))
+    
+    // Handle different types of errors
+    if (error.response) {
+      console.log('Error response:', error.response.data)
+      if (error.response.data?.errors) {
+        const errors = error.response.data.errors
+        console.log('Validation errors:', errors)
+        const errorMessages = Object.values(errors).flat().join(', ')
+        showToastMessage(`Validation error: ${errorMessages}`, 'error')
+      } else {
+        const errorMessage = error.response.data?.message || 'Server error occurred'
+        showToastMessage(errorMessage, 'error')
+      }
+    } else if (error.message) {
+      showToastMessage(error.message, 'error')
+    } else {
+      showToastMessage('Failed to update profile', 'error')
+    }
   } finally {
     loading.value = false
   }
