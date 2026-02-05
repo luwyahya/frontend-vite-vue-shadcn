@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { productService } from '@/services/product.service'
-import type { Product, ProductFormData, ProductState } from '@/types/product.types'
+import type { ProductFormData, ProductState } from '@/types/product.types'
 
 export const useProductStore = defineStore('product', {
   state: (): ProductState => ({
@@ -12,7 +12,7 @@ export const useProductStore = defineStore('product', {
       min_price: '',
       sort_by: 'created_at',
       sort_order: 'desc',
-      stock_status: '',
+      stock_status: 'all',
     },
     pagination: {
       current_page: 1,
@@ -30,22 +30,50 @@ export const useProductStore = defineStore('product', {
           per_page: perPage,
           ...filters
         }
+        console.log('Store calling API with params:', { page, ...params })
+        
         const response = await productService.getProducts(page, params)
+        console.log('Store received response:', response)
         
-        // Handle Laravel API Resource format
-        this.items = response.data
-        
-        if (response.meta) {
+        // Handle response based on actual backend format
+        if (response.success && response.data) {
+          this.items = response.data
+          
+          // Handle pagination from response
+          if (response.pagination) {
+            this.pagination = {
+              current_page: response.pagination.current_page || page,
+              last_page: response.pagination.last_page || 1,
+              per_page: response.pagination.per_page || perPage,
+              total: response.pagination.total || 0,
+            }
+          } else {
+            // Fallback pagination
+            this.pagination = {
+              current_page: page,
+              last_page: Math.ceil((response.total || this.items.length) / perPage),
+              per_page: perPage,
+              total: response.total || this.items.length,
+            }
+          }
+        } else {
+          // Fallback for different response format
+          this.items = Array.isArray(response) ? response : response.data || []
           this.pagination = {
-            current_page: response.meta.current_page,
-            last_page: response.meta.last_page,
-            per_page: response.meta.per_page,
-            total: response.meta.total,
+            current_page: page,
+            last_page: 1,
+            per_page: perPage,
+            total: this.items.length,
           }
         }
+        
+        console.log('Final store state:', {
+          items: this.items.length,
+          pagination: this.pagination
+        })
       } catch (error) {
         console.error('Failed to fetch products:', error)
-        throw error
+        this.items = []
       } finally {
         this.loading = false
       }
@@ -76,7 +104,7 @@ export const useProductStore = defineStore('product', {
         min_price: '',
         sort_by: 'created_at',
         sort_order: 'desc',
-        stock_status: '',
+        stock_status: 'all',
       }
       await this.fetchProducts(1, this.pagination.per_page)
     },
@@ -84,12 +112,30 @@ export const useProductStore = defineStore('product', {
     async createProduct(data: ProductFormData) {
       this.loading = true
       try {
-        const response = await productService.createProduct(data)
-        // Add new product to the list
-        this.items.unshift(response.data)
-        return response.data
-      } catch (error) {
+        const response: any = await productService.createProduct(data)
+        // Handle backend response format
+        const newProduct = ('success' in response) ? response.data : response.data
+        this.items.unshift(newProduct)
+        return newProduct
+      } catch (error: any) {
         console.error('Failed to create product:', error)
+        console.error('Error response:', error.response)
+        console.error('Error response data:', error.response?.data)
+        console.error('Validation errors:', error.response?.data?.errors)
+        
+        // Handle validation errors (422)
+        if (error.response?.status === 422) {
+          const validationErrors = error.response.data.errors || {}
+          console.error('Validation errors:', validationErrors)
+          console.error('Full error response:', error.response.data)
+          
+          // Create user-friendly error message
+          const errorMessages = Object.entries(validationErrors)
+            .map(([field, messages]) => `${field}: ${Array.isArray(messages) ? messages.join(', ') : messages}`)
+            .join('; ')
+          throw new Error(`Validation failed: ${errorMessages}`)
+        }
+        
         throw error
       } finally {
         this.loading = false
@@ -99,13 +145,14 @@ export const useProductStore = defineStore('product', {
     async updateProduct(id: number, data: ProductFormData) {
       this.loading = true
       try {
-        const response = await productService.updateProduct(id, data)
-        // Update product in the list
+        const response: any = await productService.updateProduct(id, data)
+        // Handle backend response format
+        const updatedProduct = ('success' in response) ? response.data : response.data
         const index = this.items.findIndex((item) => item.id === id)
         if (index !== -1) {
-          this.items[index] = response.data
+          this.items[index] = updatedProduct
         }
-        return response.data
+        return updatedProduct
       } catch (error) {
         console.error('Failed to update product:', error)
         throw error

@@ -1,10 +1,7 @@
 import { httpService } from './http.service'
-import { mockProductService } from './mock-product.service'
+import { api } from './api.service'
 import type { Product, ProductFormData } from '@/types/product.types'
 import type { LaravelApiResponse } from '@/types/api.types'
-
-// Use mock service in development mode
-const USE_MOCK = import.meta.env.DEV
 
 class ProductService {
   private readonly endpoint = '/products'
@@ -12,51 +9,43 @@ class ProductService {
   async getProducts(
     page: number = 1, 
     params: any = {}
-  ): Promise<LaravelApiResponse<Product[]>> {
-    if (USE_MOCK) {
-      return mockProductService.getProducts(page, params.per_page || 10)
-    }
-    
+  ): Promise<any> {
     const queryParams = {
       page,
       ...params
     }
     
-    // Remove null/empty values
-    Object.keys(queryParams).forEach(key => {
-      if (queryParams[key] === null || queryParams[key] === '') {
-        delete queryParams[key]
-      }
-    })
+    console.log('Sending params to backend:', queryParams)
     
-    return httpService.get<LaravelApiResponse<Product[]>>(this.endpoint, queryParams)
+    const response = await api.get(this.endpoint, { params: queryParams })
+    console.log('Raw backend response:', response.data)
+    return response.data
   }
 
   async getProduct(id: number): Promise<LaravelApiResponse<Product>> {
-    if (USE_MOCK) {
-      return mockProductService.getProduct(id)
-    }
     return httpService.get<LaravelApiResponse<Product>>(`${this.endpoint}/${id}`)
   }
 
   async createProduct(data: ProductFormData): Promise<LaravelApiResponse<Product>> {
-    if (USE_MOCK) {
-      return mockProductService.createProduct(data)
+    try {
+      console.log('Sending product data:', data)
+      // Use direct axios to bypass interceptor and see raw error
+      const response = await api.post(this.endpoint, data)
+      return response.data
+    } catch (error: any) {
+      console.error('Product service error:', error)
+      console.error('Raw axios error:', error.response)
+      console.error('Error status:', error.response?.status)
+      console.error('Error data:', error.response?.data)
+      throw error
     }
-    return httpService.post<LaravelApiResponse<Product>>(this.endpoint, data)
   }
 
   async updateProduct(id: number, data: ProductFormData): Promise<LaravelApiResponse<Product>> {
-    if (USE_MOCK) {
-      return mockProductService.updateProduct(id, data)
-    }
-    return httpService.put<LaravelApiResponse<Product>>(`${this.endpoint}/${id}`, data)
+    return httpService.patch<LaravelApiResponse<Product>>(`${this.endpoint}/${id}`, data)
   }
 
   async deleteProduct(id: number): Promise<void> {
-    if (USE_MOCK) {
-      return mockProductService.deleteProduct(id)
-    }
     return httpService.delete<void>(`${this.endpoint}/${id}`)
   }
 }

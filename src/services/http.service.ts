@@ -12,6 +12,11 @@ class HttpService {
     return response.data
   }
 
+  async patch<T>(url: string, data?: any): Promise<T> {
+    const response: AxiosResponse<T> = await api.patch(url, data)
+    return response.data
+  }
+
   async put<T>(url: string, data?: any): Promise<T> {
     const response: AxiosResponse<T> = await api.put(url, data)
     return response.data

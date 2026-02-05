@@ -5,6 +5,16 @@ export interface LaravelApiResponse<T> {
   links?: PaginationLinks
 }
 
+// Backend API response format with success flag
+export interface BackendApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+}
+
+// Union type for both response formats
+export type ApiResponse<T> = LaravelApiResponse<T> | BackendApiResponse<T>
+
 // Pagination metadata from Laravel
 export interface PaginationMeta {
   current_page: number

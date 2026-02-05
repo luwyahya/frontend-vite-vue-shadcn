@@ -17,10 +17,11 @@ class ApiService {
   }
 
   private setupInterceptors() {
-    // Request interceptor: Add Bearer token
+    // Request interceptor: Add Bearer token to all requests
     this.axiosInstance.interceptors.request.use(
       (config: InternalAxiosRequestConfig) => {
         const token = localStorage.getItem('token')
+        
         if (token && config.headers) {
           config.headers.Authorization = `Bearer ${token}`
         }
@@ -37,11 +38,24 @@ class ApiService {
         return response
       },
       (error: AxiosError<ApiError>) => {
-        // Handle 401 Unauthorized - redirect to login
+        console.log('Interceptor caught error:', error)
+        console.log('Error response:', error.response)
+        console.log('Error response data:', error.response?.data)
+        console.log('Validation errors detail:', error.response?.data?.errors)
+        if (error.response?.data?.errors?.category_id) {
+          console.log('Category ID error:', error.response.data.errors.category_id)
+        }
+        
+        // Handle 401 Unauthorized
         if (error.response?.status === 401) {
-          localStorage.removeItem('token')
-          localStorage.removeItem('user')
-          window.location.href = '/login'
+          const currentPath = window.location.pathname
+          
+          // Only redirect if not already on auth pages
+          if (currentPath !== '/login' && currentPath !== '/register') {
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            window.location.href = '/login'
+          }
         }
 
         // Handle other errors

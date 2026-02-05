@@ -24,10 +24,20 @@ export const useAuthStore = defineStore('auth', {
 
   actions: {
     async login(credentials: LoginCredentials) {
-      const { data } = await api.post('/login', credentials)
+      const response = await api.post('/login', credentials)
+      console.log('Login response:', response)
+      console.log('Response data:', response.data)
+      console.log('Nested data:', response.data.data)
 
-      const token = data.data?.token || data.token
-      const user = data.data?.user || data.user
+      // Handle Laravel custom response format: {success, message, data: {access_token, user}}
+      const token = response.data.data?.access_token
+      const user = response.data.data?.user
+
+      if (!token) {
+        console.error('No token found in response:', response)
+        console.error('Available keys in response.data.data:', Object.keys(response.data.data || {}))
+        throw new Error('Login failed: No token received')
+      }
 
       this.token = token
       this.user = user
