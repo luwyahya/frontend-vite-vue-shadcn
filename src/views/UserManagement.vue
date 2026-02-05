@@ -2,6 +2,7 @@
   <SidebarProvider>
     <AppSidebar />
     <SidebarInset>
+      <SiteHeader />
       <Toast :message="toastMessage" :type="toastType" :visible="showToast" />
 
       <div class="min-h-screen bg-gray-50 py-8">
@@ -72,10 +73,10 @@
                         :src="getAvatarUrl(user.avatar)"
                         :alt="user.name"
                         class="w-full h-full object-cover"
-                        @error="$event.target.style.display = 'none'"
+                        @error="handleImageError"
                       />
                       <div 
-                        v-else
+                        v-if="!user.avatar || imageError"
                         class="w-full h-full flex items-center justify-center text-white font-semibold"
                         :class="getAvatarColor(user.name)"
                       >
@@ -123,10 +124,10 @@
               :src="getAvatarUrl(selectedUser.avatar)"
               :alt="selectedUser.name"
               class="w-full h-full object-cover"
-              @error="$event.target.style.display = 'none'"
+              @error="handleImageError"
             />
             <div 
-              v-else
+              v-if="!selectedUser.avatar || imageError"
               class="w-full h-full flex items-center justify-center text-white text-xl font-semibold"
               :class="getAvatarColor(selectedUser.name)"
             >
@@ -186,6 +187,7 @@ import { ref, computed, onMounted } from 'vue'
 import { api } from '@/services/api.service'
 import { getAvatarColor, getAvatarUrl } from '@/utils/avatar.utils'
 import AppSidebar from '@/components/AppSidebar.vue'
+import SiteHeader from '@/components/SiteHeader.vue'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { Toast } from '@/components/ui/toast'
 import { Card, CardContent } from '@/components/ui/card'
@@ -203,6 +205,7 @@ const searchQuery = ref('')
 const selectedFilter = ref('all')
 const showDetailDialog = ref(false)
 const selectedUser = ref<any>(null)
+const imageError = ref(false)
 
 // Toast
 const showToast = ref(false)
@@ -246,8 +249,13 @@ const fetchUsers = async () => {
   }
 }
 
+const handleImageError = () => {
+  imageError.value = true
+}
+
 const showUserDetail = (user: any) => {
   selectedUser.value = user
+  imageError.value = false
   showDetailDialog.value = true
 }
 

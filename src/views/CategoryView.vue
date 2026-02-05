@@ -2,6 +2,7 @@
   <SidebarProvider>
     <AppSidebar />
     <SidebarInset>
+      <SiteHeader />
       <!-- Toast -->
       <Toast :message="toastMessage" :type="toastType" :visible="showToast" />
 
@@ -177,6 +178,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from '@/services/api.service'
 import AppSidebar from '@/components/AppSidebar.vue'
+import SiteHeader from '@/components/SiteHeader.vue'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { Toast } from '@/components/ui/toast'
 import { Card, CardContent } from '@/components/ui/card'

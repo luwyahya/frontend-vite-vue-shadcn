@@ -23,16 +23,18 @@
                   <div class="relative">
                     <div class="w-32 h-32 rounded-full overflow-hidden bg-gray-200 border-4 border-white shadow-lg">
                       <img 
-                        v-if="avatarUrl || avatarPreview"
+                        v-if="(avatarUrl || avatarPreview) && !imageError"
                         :src="avatarPreview || avatarUrl || undefined"
                         alt="Avatar"
                         class="w-full h-full object-cover"
+                        @error="handleImageError"
                       />
                       <div 
                         v-else
-                        class="w-full h-full bg-blue-500 flex items-center justify-center text-white text-3xl font-bold"
+                        class="w-full h-full flex items-center justify-center text-white text-3xl font-bold"
+                        :class="getAvatarColor(user?.name || 'User')"
                       >
-                        {{ user?.name?.charAt(0).toUpperCase() }}
+                        {{ (user?.name || 'U').charAt(0).toUpperCase() }}
                       </div>
                     </div>
                     <button
@@ -213,7 +215,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { api } from '@/services/api.service'
-import { getAvatarUrl } from '@/utils/avatar.utils'
+import { getAvatarUrl, getAvatarColor } from '@/utils/avatar.utils'
 import AppSidebar from '@/components/AppSidebar.vue'
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
 import { Toast } from '@/components/ui/toast'
@@ -239,6 +241,7 @@ const showDeleteConfirm = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
 const avatarPreview = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
+const imageError = ref(false)
 
 // Toast
 const showToast = ref(false)
@@ -267,6 +270,10 @@ const showToastMessage = (message: string, type: 'success' | 'error') => {
   setTimeout(() => showToast.value = false, 3000)
 }
 
+const handleImageError = () => {
+  imageError.value = true
+}
+
 const triggerFileInput = () => fileInput.value?.click()
 
 const handleAvatarChange = (event: Event) => {
@@ -286,6 +293,7 @@ const cancelEditing = () => {
   isEditing.value = false
   avatarPreview.value = null
   selectedFile.value = null
+  imageError.value = false
   profileForm.name = user?.name || ''
   profileForm.email = user?.email || ''
   profileForm.phone = user?.phone || ''
@@ -316,7 +324,8 @@ const saveProfile = async () => {
 
     isEditing.value = false
     selectedFile.value = null
-    // Jangan reset avatarPreview agar tetap terlihat
+    imageError.value = false
+    // Reset avatar preview setelah berhasil
     setTimeout(() => {
       avatarPreview.value = null
     }, 100)

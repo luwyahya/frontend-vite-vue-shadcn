@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
-import { getAvatarUrl } from '@/utils/avatar.utils'
-import { computed } from 'vue'
+import { getAvatarUrl, getAvatarColor } from '@/utils/avatar.utils'
+import { computed, ref } from 'vue'
 import {
   Sidebar,
   SidebarContent,
@@ -21,8 +21,13 @@ const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
 const user = authStore.user
+const imageError = ref(false)
 
 const avatarUrl = computed(() => getAvatarUrl(user?.avatar))
+
+const handleImageError = () => {
+  imageError.value = true
+}
 
 const navigationItems = [
   {
@@ -95,16 +100,18 @@ const navigationItems = [
             <div class="flex items-center gap-2">
               <div class="flex aspect-square size-8 items-center justify-center rounded-lg overflow-hidden">
                 <img 
-                  v-if="avatarUrl"
+                  v-if="user?.avatar && !imageError"
                   :src="avatarUrl"
                   :alt="user?.name"
                   class="w-full h-full object-cover"
+                  @error="handleImageError"
                 />
                 <div 
                   v-else
-                  class="w-full h-full bg-blue-500 flex items-center justify-center text-white text-sm font-semibold"
+                  class="w-full h-full flex items-center justify-center text-white text-sm font-semibold"
+                  :class="getAvatarColor(user?.name || 'User')"
                 >
-                  {{ user?.name?.charAt(0).toUpperCase() || 'U' }}
+                  {{ (user?.name || 'U').charAt(0).toUpperCase() }}
                 </div>
               </div>
               <div class="flex flex-col gap-0.5 leading-none">
