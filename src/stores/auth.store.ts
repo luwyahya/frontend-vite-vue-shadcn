@@ -23,45 +23,45 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-  async login(credentials: LoginCredentials) {
-    try {
-      const response = await api.post('/login', credentials)
-      
-      const { access_token, user } = response.data.data
-      
-      this.token = access_token
-      this.user = user
-      this.isLoggedIn = true
-      
-      localStorage.setItem('token', access_token)
-      localStorage.setItem('user', JSON.stringify(user))
-      
-      return true
-    } catch (error: any) {
-      console.error('API Error:', error)
-      
-      // Handle different error scenarios
-      if (error.response) {
-        // Server responded with error status
-        const status = error.response.status
-        const message = error.response.data?.message
+    async login(credentials: LoginCredentials) {
+      try {
+        const response = await api.post('/login', credentials)
         
-        if (status === 401) {
-          throw new Error('Email atau password salah')
-        } else if (status === 422) {
-          throw new Error('Data tidak valid')
+        const { access_token, user } = response.data.data
+        
+        this.token = access_token
+        this.user = user
+        this.isLoggedIn = true
+        
+        localStorage.setItem('token', access_token)
+        localStorage.setItem('user', JSON.stringify(user))
+        
+        return true
+      } catch (error: any) {
+        console.error('API Error:', error)
+        
+        // Handle different error scenarios
+        if (error.response) {
+          // Server responded with error status
+          const status = error.response.status
+          const message = error.response.data?.message
+          
+          if (status === 401) {
+            throw new Error('Email atau password salah')
+          } else if (status === 422) {
+            throw new Error('Data tidak valid')
+          } else {
+            throw new Error(message || 'Login gagal')
+          }
+        } else if (error.request) {
+          // Network error - API tidak bisa diakses
+          throw new Error('Tidak dapat terhubung ke server')
         } else {
-          throw new Error(message || 'Login gagal')
+          // Other error
+          throw new Error('Terjadi kesalahan')
         }
-      } else if (error.request) {
-        // Network error - API tidak bisa diakses
-        throw new Error('Tidak dapat terhubung ke server')
-      } else {
-        // Other error
-        throw new Error('Terjadi kesalahan')
       }
-    }
-  },
+    },
 
     async register(payload: RegisterPayload) {
       try {

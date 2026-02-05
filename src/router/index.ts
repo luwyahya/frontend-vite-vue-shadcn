@@ -22,7 +22,7 @@ const routes: RouteRecordRaw[] = [
     path: '/products',
     name: 'Products',
     component: () => import('@/views/ProductView.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: false },
   },
   {
     path: '/profile',
@@ -30,21 +30,18 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/views/ProfileView.vue'),
     meta: { requiresAuth: true },
   },
-
   {
     path: '/categories',
     name: 'Categories',
     component: () => import('@/views/CategoryView.vue'),
     meta: { requiresAuth: true },
   },
-
   {
     path: '/users',
     name: 'UserManagement',
     component: () => import('@/views/UserManagement.vue'),
     meta: { requiresAuth: true },
   },
-
   {
     path: '/register',
     name: 'Register',
